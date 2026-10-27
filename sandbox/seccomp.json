@@ -1,0 +1,56 @@
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "defaultErrnoRet": 1,
+  "archMap": [
+    {
+      "architecture": "SCMP_ARCH_X86_64",
+      "subArchitectures": []
+    },
+    {
+      "architecture": "SCMP_ARCH_AARCH64",
+      "subArchitectures": []
+    }
+  ],
+  "syscalls": [
+    {
+      "comment": "sorosentinel-scan (static musl): traced on aarch64 and x86_64, see sandbox/README.md. Names absent on an architecture are skipped.",
+      "names": [
+        "arch_prctl",
+        "brk",
+        "close",
+        "execve",
+        "exit_group",
+        "fcntl",
+        "mmap",
+        "mprotect",
+        "mremap",
+        "munmap",
+        "open",
+        "openat",
+        "poll",
+        "ppoll",
+        "read",
+        "rt_sigaction",
+        "rt_sigprocmask",
+        "set_tid_address",
+        "sigaltstack",
+        "write"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "comment": "runc init: runs after the filter is loaded (no-new-privileges) and before execve. Traced on aarch64 with SCMP_ACT_LOG.",
+      "names": [
+        "fstat",
+        "fstatfs",
+        "futex",
+        "getdents64",
+        "openat2",
+        "prlimit64",
+        "rt_sigreturn",
+        "statx"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    }
+  ]
+}
