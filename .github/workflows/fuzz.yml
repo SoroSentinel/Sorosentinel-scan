@@ -1,0 +1,29 @@
+name: fuzz
+
+# Not a required check: runs nightly and on demand, uploads crash inputs.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Seconds per target
+        default: "300"
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install nightly-2026-10-01 --profile minimal
+      - run: cargo install cargo-fuzz --locked --version 0.13.2
+      - run: make fuzz FUZZ_SECONDS=${{ inputs.seconds || '300' }}
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-artifacts
+          path: fuzz/artifacts/
