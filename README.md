@@ -5,7 +5,7 @@
 [![CI](https://github.com/SoroSentinel/Sorosentinel-scan/actions/workflows/ci.yml/badge.svg)](https://github.com/SoroSentinel/Sorosentinel-scan/actions/workflows/ci.yml)
 ![Rust](https://img.shields.io/badge/Rust-1.98-DEA584?logo=rust)
 ![Stellar](https://img.shields.io/badge/Stellar-Soroban-black)
-![License](https://img.shields.io/badge/license-TODO-lightgrey)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 Scan is a Rust library and CLI that inspects deployed Soroban contract bytecode without running it. It validates the WASM under strict size and count limits, reports capability indicators (the contract can replace its own code, deploy other contracts, call other contracts, or ships no interface spec) and matches against a known-bad hash list. Intel runs it as a one-shot job in a locked-down container. Output is indicators plus what was not checked, never a verdict.
 
@@ -77,4 +77,4 @@ Do not open public issues for vulnerabilities. See [SECURITY.md](SECURITY.md). T
 
 ## License
 
-TODO: choose a license (see the open question in the maintainer notes) and add a `LICENSE` file.
+Licensed under the [Apache License, Version 2.0](LICENSE).
