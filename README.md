@@ -3,6 +3,7 @@
 # SoroSentinel Scan
 
 [![CI](https://github.com/SoroSentinel/Sorosentinel-scan/actions/workflows/ci.yml/badge.svg)](https://github.com/SoroSentinel/Sorosentinel-scan/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/SoroSentinel/Sorosentinel-scan/badge)](https://scorecard.dev/viewer/?uri=github.com/SoroSentinel/Sorosentinel-scan)
 ![Rust](https://img.shields.io/badge/Rust-1.98-DEA584?logo=rust)
 ![Stellar](https://img.shields.io/badge/Stellar-Soroban-black)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
