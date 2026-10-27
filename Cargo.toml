@@ -8,6 +8,7 @@ exclude = ["fuzz"]
 version = "0.0.0"
 edition = "2024"
 publish = false
+license = "Apache-2.0"
 
 # Exact pins (AGENTS.md §6). Each was at least 14 days old when added.
 [workspace.dependencies]
