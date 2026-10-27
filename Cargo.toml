@@ -1,0 +1,18 @@
+[workspace]
+resolver = "3"
+members = ["crates/scan-core", "crates/scan-cli"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# Exact pins (AGENTS.md §6). Each was at least 14 days old when added.
+[workspace.dependencies]
+wasmparser = { version = "=0.262.0", default-features = false, features = ["std", "validate", "features"] }
+sha2 = "=0.11.1"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"

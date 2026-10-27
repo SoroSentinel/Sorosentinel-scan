@@ -1,0 +1,11 @@
+//! Resource caps for hostile input. These are our own safety limits, not
+//! network rules: TODO(verify) the network's maximum contract size and set
+//! MAX_MODULE_BYTES no lower than it.
+
+pub const MAX_MODULE_BYTES: usize = 1 << 20;
+pub const MAX_PAYLOADS: usize = 256;
+pub const MAX_CUSTOM_SECTIONS: usize = 32;
+pub const MAX_IMPORTS: usize = 4096;
+pub const MAX_EXPORTS: usize = 4096;
+pub const MAX_NAME_BYTES: usize = 256;
+pub const MAX_KNOWN_BAD_HASHES: usize = 1_000_000;
