@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = ["crates/scan-core", "crates/scan-cli"]
+# Fuzzing builds on a pinned nightly with its own lockfile (see fuzz/).
+exclude = ["fuzz"]
 
 [workspace.package]
 version = "0.0.0"
