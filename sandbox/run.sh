@@ -17,6 +17,10 @@ if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
 fi
 WASM="$1"
 HASHES="${2:-}"
+case "$HASHES" in
+  *,* | *"
+"*) echo "error: hash list path must not contain commas or newlines" >&2; exit 2 ;;
+esac
 
 NAME="sorosentinel-scan-$$"
 set -- docker run --name "$NAME" -i \
@@ -41,12 +45,15 @@ trap cleanup EXIT
 
 "$@" < "$WASM" &
 pid=$!
-( sleep "$TIMEOUT"; docker kill "$NAME" >/dev/null 2>&1 ) &
+# The watcher kills the container after TIMEOUT. When the scan finishes first,
+# only the watcher's sleep is stopped, so the watcher exits normally.
+( sleep "$TIMEOUT" && docker kill "$NAME" >/dev/null ) 2>/dev/null &
 killer=$!
 
 status=0
 wait "$pid" || status=$?
-kill "$killer" 2>/dev/null || true
+pkill -P "$killer" sleep 2>/dev/null || true
+wait "$killer" 2>/dev/null || true
 
 if [ "$status" -eq 137 ]; then
   echo '{"error":"timeout"}' >&2
