@@ -34,7 +34,23 @@ make lint     # rustfmt check + clippy -D warnings
 make test     # cargo test
 make verify   # lint + test + test-contract
 make sandbox  # build the sandbox image (Docker)
+make fuzz     # each fuzz target for FUZZ_SECONDS (default 60) on a pinned nightly
 ```
+
+## Fuzzing
+
+One cargo-fuzz target per parser path, in `fuzz/` (its own workspace and lockfile):
+`scan` (full CLI path, checks determinism and report shape), `parse` (validation and
+every cap), `known_bad_hashes` (hash-list parser). Setup:
+
+```
+rustup toolchain install nightly-2026-10-01 --profile minimal
+cargo install cargo-fuzz --locked --version 0.13.2
+```
+
+Seeds live in `fuzz/seeds/`; the generated corpus and crash artifacts are gitignored.
+A scheduled CI job (`.github/workflows/fuzz.yml`) runs every target for 5 minutes
+nightly and uploads any crash inputs.
 
 Run one scan in the sandbox: `sandbox/run.sh <file.wasm> [hashes.txt]`
 (no network, read-only FS, no capabilities, memory/CPU/PID limits, timeout).
