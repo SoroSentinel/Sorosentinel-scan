@@ -3,7 +3,7 @@
 
 CARGO ?= cargo
 
-.PHONY: deps fmt lint test test-contract gen fuzz sandbox verify
+.PHONY: deps fmt lint test test-contract schemas-check pin-schemas gen fuzz sandbox verify
 
 deps:
 	$(CARGO) fetch --locked
@@ -18,9 +18,19 @@ lint:
 test:
 	$(CARGO) test --locked
 
-# TODO: validate ScanReport output against a pinned sorosentinel-intel schemas tag.
-test-contract:
-	@echo "test-contract: no pinned sorosentinel-intel schemas tag yet"
+# ScanReport output validated against Intel's pinned ScanReport schema.
+test-contract: schemas-check
+	$(CARGO) test --locked -p scan-core --test schema_contract
+
+# Pinned Intel files match their recorded checksums (offline; no hand edits).
+schemas-check:
+	cd intel-schemas && shasum -a 256 -c SHA256SUMS
+	@grep -q "^tag $(INTEL_SCHEMAS_TAG)$$" intel-schemas/PINNED || { echo "intel-schemas is not pinned at $(INTEL_SCHEMAS_TAG); run make pin-schemas"; exit 1; }
+
+# Re-pin Intel's schemas at a tag (needs network).
+INTEL_SCHEMAS_TAG ?= v0.1.0-next.0
+pin-schemas:
+	scripts/pin-intel-schemas.sh $(INTEL_SCHEMAS_TAG)
 
 gen:
 	@echo "gen: nothing to generate"
