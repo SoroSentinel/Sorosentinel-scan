@@ -3,13 +3,14 @@
 # Usage: sandbox/run.sh <file.wasm> [known-bad-hashes-file]
 #
 # Isolation: no network, read-only root FS, all capabilities dropped,
-# no-new-privileges, Docker's default seccomp profile, non-root user, and
-# memory/CPU/PID limits. The container is killed after SCAN_TIMEOUT seconds.
-# TODO: a syscall allowlist stricter than Docker's default (sandbox/seccomp.json).
+# no-new-privileges, a syscall allowlist (sandbox/seccomp.json, see
+# sandbox/README.md), non-root user, and memory/CPU/PID limits. The container
+# is killed after SCAN_TIMEOUT seconds.
 set -eu
 
 IMAGE="${SCAN_IMAGE:-sorosentinel-scan}"
 TIMEOUT="${SCAN_TIMEOUT:-30}"
+SECCOMP="$(cd "$(dirname "$0")" && pwd)/seccomp.json"
 
 if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
   echo "usage: $0 <file.wasm> [known-bad-hashes-file]" >&2
@@ -17,6 +18,10 @@ if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
 fi
 WASM="$1"
 HASHES="${2:-}"
+if [ ! -f "$SECCOMP" ]; then
+  echo "error: seccomp profile not found: $SECCOMP" >&2
+  exit 2
+fi
 case "$HASHES" in
   *,* | *"
 "*) echo "error: hash list path must not contain commas or newlines" >&2; exit 2 ;;
@@ -28,6 +33,7 @@ set -- docker run --name "$NAME" -i \
   --read-only \
   --cap-drop ALL \
   --security-opt no-new-privileges \
+  --security-opt "seccomp=$SECCOMP" \
   --user 65534:65534 \
   --memory 256m --memory-swap 256m \
   --cpus 1 \

@@ -34,7 +34,7 @@ Data flows Scan → Intel → signed snapshot/API → Guard. The repos only talk
 
 ## Status
 
-Phase 0. In place: the parser with resource caps, five indicators, deterministic `ScanReport` JSON, the CLI, a sandbox image (no network, read-only, no capabilities, resource limits, timeout) and fuzz targets for every parser path. Not yet built: SDK-version and SEP-41 checks, a custom seccomp profile.
+Phase 0. In place: the parser with resource caps, five indicators, deterministic `ScanReport` JSON, the CLI, a sandbox image (no network, read-only, no capabilities, syscall allowlist, resource limits, timeout) and fuzz targets for every parser path. Not yet built: SDK-version and SEP-41 checks.
 
 ## Quick start
 
@@ -61,7 +61,7 @@ cargo run -p scan-cli -- path/to/contract.wasm
 |---|---|
 | `crates/scan-core/` | Parser, limits, indicators, `ScanReport` |
 | `crates/scan-cli/` | `sorosentinel-scan` binary |
-| `sandbox/` | Container image and `run.sh` |
+| `sandbox/` | Container image, `run.sh` and the seccomp profile (see `sandbox/README.md`) |
 | `fuzz/` | cargo-fuzz targets and seeds |
 
 ## Contributing
