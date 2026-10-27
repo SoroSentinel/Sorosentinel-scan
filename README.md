@@ -1,56 +1,80 @@
-# sorosentinel-scan
+<!-- TODO: add a banner/logo image here once one exists. -->
 
-Static analysis of deployed Soroban WASM for SoroSentinel (Rust): a library
-plus CLI that Intel runs as a one-shot sandboxed job. Not a server. Output is
-indicators and a `not_checked[]` list, never a verdict. The module is parsed,
-never executed.
+# SoroSentinel Scan
 
-## Usage
+[![CI](https://github.com/SoroSentinel/Sorosentinel-scan/actions/workflows/ci.yml/badge.svg)](https://github.com/SoroSentinel/Sorosentinel-scan/actions/workflows/ci.yml)
+![Rust](https://img.shields.io/badge/Rust-1.98-DEA584?logo=rust)
+![Stellar](https://img.shields.io/badge/Stellar-Soroban-black)
+![License](https://img.shields.io/badge/license-TODO-lightgrey)
 
-```
-sorosentinel-scan <file.wasm | -> [--known-bad-hashes <file>]
-```
+Scan is a Rust library and CLI that inspects deployed Soroban contract bytecode without running it. It validates the WASM under strict size and count limits, reports capability indicators (the contract can replace its own code, deploy other contracts, call other contracts, or ships no interface spec) and matches against a known-bad hash list. Intel runs it as a one-shot job in a locked-down container. Output is indicators plus what was not checked, never a verdict.
 
-Prints a `ScanReport` (sorosentinel-intel `schemas/jsonschema/ScanReport.json`)
-on stdout. On failure prints `{"error": "<code>"}` on stderr and exits 1;
-usage errors exit 2. Intel treats any failure as unanalyzable.
+Part of **SoroSentinel**, security tooling for the Stellar ecosystem. It advises; it never controls the network and never touches private keys.
 
-| Indicator | Basis | Informational |
+## Maintainers | [Telegram](TODO-telegram-group-link)
+
+| Maintainer | GitHub | Contact |
 |---|---|---|
-| `S-UPGRADEABLE` | imports `update_current_contract_wasm` (`l`.`6`) | yes |
-| `S-CREATES-CONTRACTS` | imports `create_contract` (`l`.`3`) or `create_contract_with_constructor` (`l`.`e`) | yes |
-| `S-CROSS-CALL` | imports `call` (`d`.`_`) or `try_call` (`d`.`0`) | yes |
-| `S-NO-SPEC` | no `contractspecv0` custom section | yes |
-| `S-KNOWN-BAD-HASH` | SHA-256 is in the Intel-supplied list | no |
+| TODO name | [@TODO](https://github.com/TODO) | [Telegram](https://t.me/TODO) |
 
-Host-import codes are verified against `soroban-env-common/env.json` at
-rs-soroban-env v30.0.0; section names against soroban-sdk v29.0.1.
+## Community
 
-## Commands
+Questions and coordination: [Telegram group](TODO-telegram-group-link).
 
+## How the pieces fit
+
+| Repo | Language | Role |
+|---|---|---|
+| [Sorosentinel-intel](https://github.com/SoroSentinel/Sorosentinel-intel) | Go | Evidence, detectors, signals, API, signed snapshot, shared schemas |
+| [Sorosentinel-guard](https://github.com/SoroSentinel/Sorosentinel-guard) | TypeScript | Pre-signing transaction analysis SDK for wallets |
+| [Sorosentinel-scan](https://github.com/SoroSentinel/Sorosentinel-scan) | Rust | Static triage of deployed Soroban WASM |
+
+Data flows Scan → Intel → signed snapshot/API → Guard. The repos only talk through versioned schemas owned by Intel.
+
+## Status
+
+Phase 0. In place: the parser with resource caps, five indicators, deterministic `ScanReport` JSON, the CLI, a sandbox image (no network, read-only, no capabilities, resource limits, timeout) and fuzz targets for every parser path. Not yet built: SDK-version and SEP-41 checks, a custom seccomp profile.
+
+## Quick start
+
+Prerequisites: Rust via rustup (the toolchain in `rust-toolchain.toml` installs automatically). Docker for the sandbox.
+
+```bash
+git clone https://github.com/SoroSentinel/Sorosentinel-scan.git
+cd Sorosentinel-scan
+make deps
+make verify
+cargo run -p scan-cli -- path/to/contract.wasm
 ```
-make deps     # cargo fetch --locked
-make lint     # rustfmt check + clippy -D warnings
-make test     # cargo test
-make verify   # lint + test + test-contract
-make sandbox  # build the sandbox image (Docker)
-make fuzz     # each fuzz target for FUZZ_SECONDS (default 60) on a pinned nightly
-```
 
-## Fuzzing
+| Command | What it does |
+|---|---|
+| `make verify` | rustfmt check, clippy `-D warnings`, tests |
+| `make test` | `cargo test` |
+| `make sandbox` | Build the sandbox image |
+| `make fuzz` | Run each fuzz target for `FUZZ_SECONDS` (default 60) |
 
-One cargo-fuzz target per parser path, in `fuzz/` (its own workspace and lockfile):
-`scan` (full CLI path, checks determinism and report shape), `parse` (validation and
-every cap), `known_bad_hashes` (hash-list parser). Setup:
+## Repository layout
 
-```
-rustup toolchain install nightly-2026-10-01 --profile minimal
-cargo install cargo-fuzz --locked --version 0.13.2
-```
+| Path | What |
+|---|---|
+| `crates/scan-core/` | Parser, limits, indicators, `ScanReport` |
+| `crates/scan-cli/` | `sorosentinel-scan` binary |
+| `sandbox/` | Container image and `run.sh` |
+| `fuzz/` | cargo-fuzz targets and seeds |
 
-Seeds live in `fuzz/seeds/`; the generated corpus and crash artifacts are gitignored.
-A scheduled CI job (`.github/workflows/fuzz.yml`) runs every target for 5 minutes
-nightly and uploads any crash inputs.
+## Contributing
 
-Run one scan in the sandbox: `sandbox/run.sh <file.wasm> [hashes.txt]`
-(no network, read-only FS, no capabilities, memory/CPU/PID limits, timeout).
+Pick an open issue (Wave issues carry the `Stellar Wave` label), comment to be assigned, then follow [CONTRIBUTING.md](CONTRIBUTING.md). Every PR must pass `make verify`. AI coding agents must follow [AGENTS.md](AGENTS.md).
+
+## Security
+
+Do not open public issues for vulnerabilities. See [SECURITY.md](SECURITY.md). This code is **not audited**.
+
+## Contributors
+
+[![Contributors](https://contrib.rocks/image?repo=SoroSentinel/Sorosentinel-scan)](https://github.com/SoroSentinel/Sorosentinel-scan/graphs/contributors)
+
+## License
+
+TODO: choose a license (see the open question in the maintainer notes) and add a `LICENSE` file.
