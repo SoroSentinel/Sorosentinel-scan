@@ -38,3 +38,10 @@ path = "fuzz_targets/known_bad_hashes.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "env_meta"
+path = "fuzz_targets/env_meta.rs"
+test = false
+doc = false
+bench = false

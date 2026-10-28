@@ -3,18 +3,25 @@
 use wasmparser::{Encoding, ExternalKind, Parser, Payload, TypeRef, Validator, WasmFeatures};
 
 use crate::limits::{
-    MAX_CUSTOM_SECTIONS, MAX_EXPORTS, MAX_IMPORTS, MAX_MODULE_BYTES, MAX_NAME_BYTES, MAX_PAYLOADS,
+    MAX_CUSTOM_SECTIONS, MAX_ENV_META_BYTES, MAX_ENV_META_SECTIONS, MAX_EXPORTS, MAX_IMPORTS,
+    MAX_MODULE_BYTES, MAX_NAME_BYTES, MAX_PAYLOADS,
 };
+use crate::meta::ENV_META_SECTION;
 use crate::report::ScanError;
 
-/// What the detectors need from a module. Custom-section contents are not
-/// interpreted here: they are claims made by the module's author.
+/// What the detectors need from a module. Custom-section contents are claims
+/// made by the module's author and are not interpreted here; the bytes of one
+/// section are retained for `crate::meta` to read.
 #[derive(Debug, Default)]
 pub struct Module {
     /// Function imports as (module, name).
     pub function_imports: Vec<(String, String)>,
     pub function_exports: Vec<String>,
     pub custom_sections: Vec<String>,
+    /// Each `contractenvmetav0` body seen, in order, capped in count and size.
+    /// An oversized body is kept as empty so it can never look like one
+    /// readable claim.
+    pub env_meta_bodies: Vec<Vec<u8>>,
 }
 
 impl Module {
@@ -77,7 +84,15 @@ pub fn parse(bytes: &[u8]) -> Result<Module, ScanError> {
                 if m.custom_sections.len() >= MAX_CUSTOM_SECTIONS {
                     return Err(ScanError::LimitExceeded("custom_sections"));
                 }
-                m.custom_sections.push(bounded(reader.name())?);
+                let name = bounded(reader.name())?;
+                if name == ENV_META_SECTION {
+                    let data = reader.data();
+                    let retain = data.len() <= MAX_ENV_META_BYTES
+                        && m.env_meta_bodies.len() < MAX_ENV_META_SECTIONS;
+                    m.env_meta_bodies
+                        .push(if retain { data.to_vec() } else { Vec::new() });
+                }
+                m.custom_sections.push(name);
             }
             _ => {}
         }

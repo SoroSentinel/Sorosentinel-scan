@@ -33,6 +33,10 @@ pub struct Indicator {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ClaimedMeta {
     pub spec_present: bool,
+    /// The protocol version the module claims to target. Omitted when the
+    /// module made no readable claim, which is not the same as claiming zero.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub protocol_version: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -105,10 +109,12 @@ impl KnownBadHashes {
 pub fn scan(bytes: &[u8], known_bad: &KnownBadHashes) -> Result<ScanReport, ScanError> {
     let module = parse(bytes)?;
     let wasm_sha256 = hex(&Sha256::digest(bytes));
-    let indicators = detect(&module, known_bad.contains(&wasm_sha256));
+    let claim = crate::meta::claim(&module.env_meta_bodies);
+    let indicators = detect(&module, known_bad.contains(&wasm_sha256), claim);
     Ok(ScanReport {
         claimed_meta: ClaimedMeta {
             spec_present: module.has_custom_section(SPEC_SECTION),
+            protocol_version: claim.map(|c| c.protocol),
         },
         wasm_sha256,
         ruleset_version: RULESET_VERSION,

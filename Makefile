@@ -40,7 +40,7 @@ gen:
 # cargo install cargo-fuzz --locked --version 0.13.2.
 FUZZ_TOOLCHAIN ?= nightly-2026-10-01
 FUZZ_SECONDS ?= 60
-FUZZ_TARGETS := scan parse known_bad_hashes
+FUZZ_TARGETS := scan parse known_bad_hashes env_meta
 # Downloaded real-world modules, never committed (see README). libFuzzer takes
 # extra directories as seed inputs, so anything dropped here is parsed first.
 FUZZ_FETCHED_SEEDS ?= fuzz/seeds/scan
