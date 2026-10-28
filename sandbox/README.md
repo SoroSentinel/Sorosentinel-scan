@@ -52,7 +52,44 @@ directory under `$HOME`, since Colima only shares `$HOME`.
 
 Traced on 2026-10-27 with Docker 29.5.2 under Colima on aarch64.
 TODO(verify): the runc group was traced on aarch64 only. Before production use
-on x86_64, repeat step 3 on an x86_64 Docker host.
+on x86_64, repeat step 3 on an x86_64 Docker host as below.
+
+### Re-tracing runc init on x86_64
+
+runc's own syscalls depend on the host's architecture, kernel and runc
+version, so they must come from a real x86_64 Docker host; qemu-user (step 2)
+only covers the scanner. Any of these works:
+
+- **An x86_64 Linux machine** with Docker (a VM or a cloud host).
+- **Colima on an Apple Silicon Mac**, with a second, fully emulated x86_64 VM
+  (slow, but runc and the kernel are then x86_64):
+  `colima start --profile amd64 --arch x86_64 --vm-type qemu`, then
+  `docker context use colima-amd64`. Read the kernel log with
+  `colima ssh --profile amd64 -- sudo dmesg`. Stop it afterwards with
+  `colima stop --profile amd64` and switch back with
+  `docker context use colima`.
+- **A GitHub-hosted `ubuntu-latest` runner** (x86_64, Docker preinstalled,
+  passwordless `sudo dmesg`), from a manually dispatched workflow on a branch.
+
+On that host:
+
+1. `make sandbox`, and record `docker version` and `uname -r`.
+2. Copy `seccomp.json` to `seccomp-log.json` with `defaultAction` set to
+   `SCMP_ACT_LOG`, and use a scratch copy of `run.sh` whose `SECCOMP=` line
+   points at it (do not commit either copy).
+3. `sudo sysctl kernel.printk_ratelimit=0` (note the old value first).
+4. Run every input listed under "How the list was derived" through `run.sh`.
+5. Collect the logged calls:
+   `sudo dmesg | grep 'type=1326' | grep -o 'syscall=[0-9]*' | sort -u`.
+   The numbers are x86_64 syscall numbers; translate them with
+   `ausyscall x86_64 <n>` (auditd) or the kernel's
+   `arch/x86/entry/syscalls/syscall_64.tbl`. Check that the `comm=` field of
+   every line is `runc:[2:INIT]`; anything logged by `sorosentinel-scan`
+   belongs to the scanner group.
+6. Restore `kernel.printk_ratelimit`.
+7. Add any missing names to the runc group in `seccomp.json`, then run each
+   input repeatedly with `SCMP_ACT_ERRNO` on both x86_64 and aarch64
+   before committing. Update the "Traced on" line and remove this TODO.
 
 ### Checking that other syscalls are blocked
 
