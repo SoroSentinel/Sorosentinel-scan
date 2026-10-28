@@ -136,6 +136,90 @@ fn spec_section_is_a_claim_not_inspected() {
     assert!(r.claimed_meta.spec_present);
 }
 
+// ---- S-OLD-SDK: the contractenvmetav0 claim ----
+
+const ENVMETA: &str = "contractenvmetav0";
+
+fn env_meta(kind: u32, protocol: u32, pre_release: u32) -> Vec<u8> {
+    [kind, protocol, pre_release]
+        .iter()
+        .flat_map(|v| v.to_be_bytes())
+        .collect()
+}
+
+/// A module with a spec section and the given extra sections, scanned.
+fn claim_of(customs: &[(&str, &[u8])]) -> scan_core::ScanReport {
+    let mut sections: Vec<(&str, &[u8])> = vec![SPEC];
+    sections.extend_from_slice(customs);
+    scan(&module(&[], &["f"], &sections), &KnownBadHashes::default()).unwrap()
+}
+
+#[test]
+fn a_current_claim_is_recorded_and_raises_nothing() {
+    // 23 and 29 are both claims real testnet modules make today.
+    for protocol in [23, 29] {
+        let body = env_meta(0, protocol, 0);
+        let r = claim_of(&[(ENVMETA, body.as_slice())]);
+        assert_eq!(r.claimed_meta.protocol_version, Some(protocol));
+        assert!(r.indicators.is_empty(), "{protocol}");
+    }
+}
+
+#[test]
+fn an_old_claim_is_informational_and_carries_the_number() {
+    let body = env_meta(0, 20, 0);
+    let r = claim_of(&[(ENVMETA, body.as_slice())]);
+    assert_eq!(r.indicators.len(), 1);
+    let i = &r.indicators[0];
+    assert_eq!(i.code, "S-OLD-SDK");
+    assert!(i.informational, "must never raise a level alone");
+    assert_eq!(i.facts["claimed_protocol_version"], "20");
+
+    // The floor itself is not old; one below it is.
+    let at_floor = env_meta(0, scan_core::detectors::OLD_PROTOCOL_FLOOR, 0);
+    assert_eq!(
+        claim_of(&[(ENVMETA, at_floor.as_slice())]).indicators.len(),
+        0
+    );
+
+    let pre_release = env_meta(0, 19, 3);
+    let r = claim_of(&[(ENVMETA, pre_release.as_slice())]);
+    assert_eq!(r.indicators[0].facts["claimed_pre_release"], "3");
+    assert_eq!(r.claimed_meta.protocol_version, Some(19));
+}
+
+#[test]
+fn an_unreadable_claim_is_absent_not_a_guess() {
+    let truncated = env_meta(0, 23, 0);
+    let wrong_arm = env_meta(1, 23, 0);
+    let other = env_meta(0, 12, 0);
+    let good = env_meta(0, 23, 0);
+    let oversized = [0u8; 4096];
+    let cases: Vec<Vec<(&str, &[u8])>> = vec![
+        vec![],                                       // no section at all
+        vec![(ENVMETA, &truncated.as_slice()[..11])], // cut short
+        vec![(ENVMETA, wrong_arm.as_slice())],        // unknown union arm
+        vec![(ENVMETA, &oversized)],                  // hostile blob
+        // Two sections claiming different protocols.
+        vec![(ENVMETA, good.as_slice()), (ENVMETA, other.as_slice())],
+    ];
+    for customs in cases {
+        let r = claim_of(&customs);
+        assert_eq!(r.claimed_meta.protocol_version, None, "{customs:?}");
+        assert!(
+            !r.indicators.iter().any(|i| i.code == "S-OLD-SDK"),
+            "{customs:?}"
+        );
+    }
+}
+
+#[test]
+fn no_claim_omits_the_field_rather_than_emitting_null() {
+    let json = serde_json::to_string(&claim_of(&[])).unwrap();
+    assert!(!json.contains("protocol_version"), "{json}");
+    assert!(json.contains("\"claimed_meta\":{\"spec_present\":true}"));
+}
+
 #[test]
 fn deterministic_json() {
     let bytes = module(&[("l", "6"), ("d", "0")], &["a", "b"], &[]);

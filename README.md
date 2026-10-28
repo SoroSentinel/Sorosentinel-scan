@@ -8,7 +8,7 @@
 ![Stellar](https://img.shields.io/badge/Stellar-Soroban-black)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-Scan is a Rust library and CLI that inspects deployed Soroban contract bytecode without running it. It validates the WASM under strict size and count limits, reports capability indicators (the contract can replace its own code, deploy other contracts, call other contracts, or ships no interface spec) and matches against a known-bad hash list. Intel runs it as a one-shot job in a locked-down container. Output is indicators plus what was not checked, never a verdict.
+Scan is a Rust library and CLI that inspects deployed Soroban contract bytecode without running it. It validates the WASM under strict size and count limits, reports capability indicators (the contract can replace its own code, deploy other contracts, call other contracts, ships no interface spec, or claims an interface version older than anything currently deployed) and matches against a known-bad hash list. Intel runs it as a one-shot job in a locked-down container. Output is indicators plus what was not checked, never a verdict.
 
 Part of **SoroSentinel**, security tooling for the Stellar ecosystem. It advises; it never controls the network and never touches private keys.
 
@@ -34,7 +34,7 @@ Data flows Scan → Intel → signed snapshot/API → Guard. The repos only talk
 
 ## Status
 
-Minimal library complete. In place: the parser with resource caps, five indicators, deterministic `ScanReport` JSON validated against Intel's pinned schema, the CLI, a sandbox image (no network, read-only, no capabilities, syscall allowlist, resource limits, timeout) and fuzz targets for every parser path. Not yet built: SDK-version and SEP-41 checks (growing Scan beyond this is an open decision).
+Minimal library complete. In place: the parser with resource caps, six indicators, deterministic `ScanReport` JSON validated against Intel's pinned schema, the CLI, a sandbox image (no network, read-only, no capabilities, syscall allowlist, resource limits, timeout) and fuzz targets for every parser path. Also in place: `S-OLD-SDK`, which reads the protocol version a module claims in its own `contractenvmetav0` section — a claim, not a measurement of how it was built. Not yet built: the SEP-41 conformance check (growing Scan beyond this is an open decision).
 
 ## Quick start
 
@@ -62,15 +62,23 @@ cargo run -p scan-cli -- path/to/contract.wasm
 `make fuzz` builds synthetic WASM seeds from the same byte builders as the unit
 tests (`crates/scan-core/tests/fuzz_seeds.rs`) into the gitignored corpus. Real
 deployed modules reach parser paths synthetic seeds do not: drop `.wasm` files in
-`fuzz/seeds/scan/` and `make fuzz` passes that directory to the `scan` and
-`parse` targets as well. It is gitignored, so downloaded modules are never
+`fuzz/seeds/scan/` and `make fuzz` passes that directory to every WASM target
+(`scan`, `parse`, `env_meta`). It is gitignored, so downloaded modules are never
 committed; check the license of anything you put there.
 
-Fetching them from Stellar RPC (issue #10) is not scriptable inside this repo as
-it is pinned today: it needs an HTTP client and the Stellar XDR definitions, and
-`scan-core` deliberately depends on neither (`wasmparser`, `sha2`, `serde`).
-Adding them is an AGENTS.md §10 dependency decision, and growing Scan past the
-minimal library is the open call recorded in ADR 0002.
+Fetching real modules is Intel's job, not this repo's: `sorosentinel-intel`
+depends on an HTTP client and the Stellar XDR definitions, and `scan-core`
+deliberately depends on neither (`wasmparser`, `sha2`, `serde`). From an Intel
+checkout:
+
+```sh
+go run ./cmd/intel-fuzz-seeds -out ../Sorosentinel-scan/fuzz/seeds/scan -span 5000
+```
+
+Measured on testnet on 2026-10-28: 3000 ledgers yielded 73 distinct modules
+(1.1 MB), so use a wide `-span`. Deployed contract bytecode is public ledger
+data used here only as parser input; it carries no license grant for anything
+else, which is why the directory stays gitignored and nothing is committed.
 
 ## Repository layout
 
