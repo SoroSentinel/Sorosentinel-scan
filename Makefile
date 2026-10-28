@@ -41,9 +41,13 @@ gen:
 FUZZ_TOOLCHAIN ?= nightly-2026-10-01
 FUZZ_SECONDS ?= 60
 FUZZ_TARGETS := scan parse known_bad_hashes
+# Downloaded real-world modules, never committed (see README). libFuzzer takes
+# extra directories as seed inputs, so anything dropped here is parsed first.
+FUZZ_FETCHED_SEEDS ?= fuzz/seeds/scan
 fuzz: fuzz-seeds
 	@for t in $(FUZZ_TARGETS); do \
 	  seeds=$(FUZZ_WASM_SEEDS); [ $$t = known_bad_hashes ] && seeds=fuzz/seeds/known_bad_hashes; \
+	  if [ $$t != known_bad_hashes ] && [ -n "$$(ls -A $(FUZZ_FETCHED_SEEDS) 2>/dev/null)" ]; then seeds="$$seeds $(FUZZ_FETCHED_SEEDS)"; fi; \
 	  mkdir -p fuzz/corpus/$$t; \
 	  echo "fuzz: $$t for $(FUZZ_SECONDS)s"; \
 	  $(CARGO) +$(FUZZ_TOOLCHAIN) fuzz run $$t fuzz/corpus/$$t $$seeds -- \
