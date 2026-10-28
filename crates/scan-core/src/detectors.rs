@@ -13,10 +13,19 @@
 
 use std::collections::BTreeMap;
 
+use crate::meta::EnvMetaClaim;
 use crate::parse::Module;
 use crate::report::Indicator;
 
 pub const SPEC_SECTION: &str = "contractspecv0";
+
+/// `S-OLD-SDK` fires when the module claims an interface version below this.
+/// The floor is a rule choice, not a network fact, so it is stated with its
+/// evidence: measured 2026-10-28 across the 73 distinct contract modules
+/// deployed in 3000 testnet ledgers, every claim was 21..=29. Anything under
+/// 21 is older than anything live in that sample. Informational only, and it
+/// never raises a level on its own.
+pub const OLD_PROTOCOL_FLOOR: u32 = 21;
 
 const UPDATE_CURRENT_CONTRACT_WASM: (&str, &str) = ("l", "6");
 const CREATE_CONTRACT: (&str, &str) = ("l", "3");
@@ -25,7 +34,8 @@ const CALL: (&str, &str) = ("d", "_");
 const TRY_CALL: (&str, &str) = ("d", "0");
 
 /// Runs every detector. Output is sorted by code, so it is deterministic.
-pub fn detect(m: &Module, known_bad: bool) -> Vec<Indicator> {
+/// `claim` is what the module says about its own interface version, if anything.
+pub fn detect(m: &Module, known_bad: bool, claim: Option<EnvMetaClaim>) -> Vec<Indicator> {
     let mut out = Vec::new();
     let has = |(module, name): (&str, &str)| m.imports(module, name);
 
@@ -40,6 +50,22 @@ pub fn detect(m: &Module, known_bad: bool) -> Vec<Indicator> {
     }
     if !m.has_custom_section(SPEC_SECTION) {
         out.push(informational("S-NO-SPEC"));
+    }
+    if let Some(claim) = claim.filter(|c| c.protocol < OLD_PROTOCOL_FLOOR) {
+        let mut facts = BTreeMap::new();
+        facts.insert(
+            "claimed_protocol_version".to_owned(),
+            claim.protocol.to_string(),
+        );
+        facts.insert(
+            "claimed_pre_release".to_owned(),
+            claim.pre_release.to_string(),
+        );
+        out.push(Indicator {
+            code: "S-OLD-SDK",
+            informational: true,
+            facts,
+        });
     }
     if known_bad {
         out.push(Indicator {
