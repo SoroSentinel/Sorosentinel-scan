@@ -1,0 +1,33 @@
+# Weekly version updates. Cooldown holds back releases younger than 14 days,
+# matching the project's dependency-age rule (AGENTS.md §6). Every update is a
+# PR that CI and review gate like any other change.
+
+version: 2
+updates:
+  - package-ecosystem: cargo
+    # The fuzz crate is its own workspace with its own lockfile.
+    directories: ["/", "/fuzz"]
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: "build(deps)"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: "ci(deps)"
+
+  - package-ecosystem: docker
+    directory: "/sandbox"
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: "build(deps)"
