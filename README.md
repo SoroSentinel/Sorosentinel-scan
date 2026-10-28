@@ -34,7 +34,7 @@ Data flows Scan → Intel → signed snapshot/API → Guard. The repos only talk
 
 ## Status
 
-Phase 0. In place: the parser with resource caps, five indicators, deterministic `ScanReport` JSON, the CLI, a sandbox image (no network, read-only, no capabilities, syscall allowlist, resource limits, timeout) and fuzz targets for every parser path. Not yet built: SDK-version and SEP-41 checks.
+Minimal library complete. In place: the parser with resource caps, five indicators, deterministic `ScanReport` JSON validated against Intel's pinned schema, the CLI, a sandbox image (no network, read-only, no capabilities, syscall allowlist, resource limits, timeout) and fuzz targets for every parser path. Not yet built: SDK-version and SEP-41 checks (growing Scan beyond this is an open decision).
 
 ## Quick start
 
