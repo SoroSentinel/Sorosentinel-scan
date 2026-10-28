@@ -3,7 +3,7 @@
 
 CARGO ?= cargo
 
-.PHONY: deps fmt lint test test-contract schemas-check pin-schemas gen fuzz sandbox verify
+.PHONY: deps fmt lint test test-contract schemas-check pin-schemas gen fuzz fuzz-seeds sandbox verify
 
 deps:
 	$(CARGO) fetch --locked
@@ -41,14 +41,20 @@ gen:
 FUZZ_TOOLCHAIN ?= nightly-2026-10-01
 FUZZ_SECONDS ?= 60
 FUZZ_TARGETS := scan parse known_bad_hashes
-fuzz:
+fuzz: fuzz-seeds
 	@for t in $(FUZZ_TARGETS); do \
-	  seeds=fuzz/seeds/scan; [ $$t = known_bad_hashes ] && seeds=fuzz/seeds/known_bad_hashes; \
+	  seeds=$(FUZZ_WASM_SEEDS); [ $$t = known_bad_hashes ] && seeds=fuzz/seeds/known_bad_hashes; \
 	  mkdir -p fuzz/corpus/$$t; \
 	  echo "fuzz: $$t for $(FUZZ_SECONDS)s"; \
 	  $(CARGO) +$(FUZZ_TOOLCHAIN) fuzz run $$t fuzz/corpus/$$t $$seeds -- \
 	    -max_total_time=$(FUZZ_SECONDS) -max_len=65536 || exit 1; \
 	done
+
+# WASM seeds are generated (crates/scan-core/tests/fuzz_seeds.rs) into the
+# gitignored corpus dir rather than committed as binaries.
+FUZZ_WASM_SEEDS := fuzz/corpus/seeds/scan
+fuzz-seeds:
+	SCAN_FUZZ_SEEDS_DIR=$(CURDIR)/$(FUZZ_WASM_SEEDS) $(CARGO) test --locked -p scan-core --test fuzz_seeds
 
 sandbox:
 	docker build -f sandbox/Dockerfile -t sorosentinel-scan .
