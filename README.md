@@ -57,6 +57,21 @@ cargo run -p scan-cli -- path/to/contract.wasm
 | `make sandbox` | Build the sandbox image |
 | `make fuzz` | Run each fuzz target for `FUZZ_SECONDS` (default 60) |
 
+### Fuzz seeds
+
+`make fuzz` builds synthetic WASM seeds from the same byte builders as the unit
+tests (`crates/scan-core/tests/fuzz_seeds.rs`) into the gitignored corpus. Real
+deployed modules reach parser paths synthetic seeds do not: drop `.wasm` files in
+`fuzz/seeds/scan/` and `make fuzz` passes that directory to the `scan` and
+`parse` targets as well. It is gitignored, so downloaded modules are never
+committed; check the license of anything you put there.
+
+Fetching them from Stellar RPC (issue #10) is not scriptable inside this repo as
+it is pinned today: it needs an HTTP client and the Stellar XDR definitions, and
+`scan-core` deliberately depends on neither (`wasmparser`, `sha2`, `serde`).
+Adding them is an AGENTS.md §10 dependency decision, and growing Scan past the
+minimal library is the open call recorded in ADR 0002.
+
 ## Repository layout
 
 | Path | What |
