@@ -110,7 +110,14 @@ pub fn scan(bytes: &[u8], known_bad: &KnownBadHashes) -> Result<ScanReport, Scan
     let module = parse(bytes)?;
     let wasm_sha256 = hex(&Sha256::digest(bytes));
     let claim = crate::meta::claim(&module.env_meta_bodies);
-    let indicators = detect(&module, known_bad.contains(&wasm_sha256), claim);
+    let functions = crate::spec::signatures(&module.spec_bodies);
+    let sep41 = functions.as_deref().and_then(crate::spec::sep41_claim);
+    let indicators = detect(
+        &module,
+        known_bad.contains(&wasm_sha256),
+        claim,
+        sep41.as_ref(),
+    );
     Ok(ScanReport {
         claimed_meta: ClaimedMeta {
             spec_present: module.has_custom_section(SPEC_SECTION),

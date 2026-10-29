@@ -81,7 +81,7 @@ fn json_is_the_default_and_is_the_scan_report() {
     let file = fixture("default.json.wasm", EMPTY_MODULE);
     let report = stdout_json(&[file.to_str().expect("utf-8 path")]);
     assert_eq!(report["wasm_sha256"].as_str().expect("hash").len(), 64);
-    assert_eq!(report["ruleset_version"], "2026.10.2");
+    assert_eq!(report["ruleset_version"], scan_core::RULESET_VERSION);
     assert_eq!(report["indicators"][0]["code"], "S-NO-SPEC");
     assert!(report["not_checked"].as_array().expect("nc").len() > 1);
 }
