@@ -34,7 +34,7 @@ Data flows Scan → Intel → signed snapshot/API → Guard. The repos only talk
 
 ## Status
 
-Minimal library complete. In place: the parser with resource caps, six indicators, deterministic `ScanReport` JSON validated against Intel's pinned schema, the CLI, a sandbox image (no network, read-only, no capabilities, syscall allowlist, resource limits, timeout) and fuzz targets for every parser path. Also in place: `S-OLD-SDK`, which reads the protocol version a module claims in its own `contractenvmetav0` section — a claim, not a measurement of how it was built. Not yet built: the SEP-41 conformance check (growing Scan beyond this is an open decision).
+Minimal library complete. In place: the parser with resource caps, six indicators, deterministic `ScanReport` JSON validated against Intel's pinned schema, the CLI with SARIF 2.1.0 output (see [Output formats](#output-formats)), a sandbox image (no network, read-only, no capabilities, syscall allowlist, resource limits, timeout) and fuzz targets for every parser path. Also in place: `S-OLD-SDK`, which reads the protocol version a module claims in its own `contractenvmetav0` section — a claim, not a measurement of how it was built. Not yet built: the SEP-41 conformance check (growing Scan beyond this is an open decision).
 
 ## Quick start
 
@@ -56,6 +56,26 @@ cargo run -p scan-cli -- path/to/contract.wasm
 | `make pin-schemas` | Re-pin Intel's schemas at `INTEL_SCHEMAS_TAG` (needs network) |
 | `make sandbox` | Build the sandbox image |
 | `make fuzz` | Run each fuzz target for `FUZZ_SECONDS` (default 60) |
+
+### Output formats
+
+```bash
+cargo run -p scan-cli -- path/to/contract.wasm                 # ScanReport JSON
+cargo run -p scan-cli -- path/to/contract.wasm --format sarif  # the same report as SARIF 2.1.0
+```
+
+JSON is the default, the complete record, and what Intel consumes. `--format
+sarif` renders the same `ScanReport` for code-scanning tools: one run, one
+artifact named `<wasm_sha256>.wasm`, one result per indicator and per
+`not_checked` code. Informational indicators are SARIF `kind: informational`;
+everything else, including the `not_checked` codes, is `kind: review`, and every
+result is `level: none` because no Scan output is a determination (§3.3). A rule
+carries only its `id`: approved rule text needs an Intel template and a pin,
+which this repo does not have yet, so `message.text` is the code plus its
+`key=value` facts and nothing else (§5). Failures still exit 1 with
+`{"error": "<code>"}` on stderr and no stdout.
+
+`--known-bad-hashes <file>` works with either format.
 
 ### Fuzz seeds
 
