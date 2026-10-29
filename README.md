@@ -63,7 +63,7 @@ cargo run -p scan-cli -- path/to/contract.wasm
 tests (`crates/scan-core/tests/fuzz_seeds.rs`) into the gitignored corpus. Real
 deployed modules reach parser paths synthetic seeds do not: drop `.wasm` files in
 `fuzz/seeds/scan/` and `make fuzz` passes that directory to every WASM target
-(`scan`, `parse`, `env_meta`). It is gitignored, so downloaded modules are never
+(`scan`, `parse`, `env_meta`, `spec`). It is gitignored, so downloaded modules are never
 committed; check the license of anything you put there.
 
 Fetching real modules is Intel's job, not this repo's: `sorosentinel-intel`

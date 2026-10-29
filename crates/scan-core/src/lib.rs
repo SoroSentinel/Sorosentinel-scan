@@ -7,8 +7,9 @@ pub mod limits;
 pub mod meta;
 pub mod parse;
 pub mod report;
+pub mod spec;
 
 pub use report::{ClaimedMeta, Indicator, KnownBadHashes, ScanError, ScanReport, scan};
 
 /// Stamped into every report. Change it whenever detectors or caps change.
-pub const RULESET_VERSION: &str = "2026.10.2";
+pub const RULESET_VERSION: &str = "2026.10.3";
