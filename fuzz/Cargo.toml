@@ -45,3 +45,10 @@ path = "fuzz_targets/env_meta.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "spec"
+path = "fuzz_targets/spec.rs"
+test = false
+doc = false
+bench = false

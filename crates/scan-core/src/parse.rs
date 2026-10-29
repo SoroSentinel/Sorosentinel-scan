@@ -4,14 +4,15 @@ use wasmparser::{Encoding, ExternalKind, Parser, Payload, TypeRef, Validator, Wa
 
 use crate::limits::{
     MAX_CUSTOM_SECTIONS, MAX_ENV_META_BYTES, MAX_ENV_META_SECTIONS, MAX_EXPORTS, MAX_IMPORTS,
-    MAX_MODULE_BYTES, MAX_NAME_BYTES, MAX_PAYLOADS,
+    MAX_MODULE_BYTES, MAX_NAME_BYTES, MAX_PAYLOADS, MAX_SPEC_BYTES, MAX_SPEC_SECTIONS,
 };
 use crate::meta::ENV_META_SECTION;
 use crate::report::ScanError;
+use crate::spec::SPEC_SECTION;
 
 /// What the detectors need from a module. Custom-section contents are claims
 /// made by the module's author and are not interpreted here; the bytes of one
-/// section are retained for `crate::meta` to read.
+/// section are retained for `crate::meta` and `crate::spec` to read.
 #[derive(Debug, Default)]
 pub struct Module {
     /// Function imports as (module, name).
@@ -22,6 +23,9 @@ pub struct Module {
     /// An oversized body is kept as empty so it can never look like one
     /// readable claim.
     pub env_meta_bodies: Vec<Vec<u8>>,
+    /// Each `contractspecv0` body seen, under the same rule: oversized is
+    /// kept as empty, because an unreadable spec must not read as no functions.
+    pub spec_bodies: Vec<Vec<u8>>,
 }
 
 impl Module {
@@ -90,6 +94,13 @@ pub fn parse(bytes: &[u8]) -> Result<Module, ScanError> {
                     let retain = data.len() <= MAX_ENV_META_BYTES
                         && m.env_meta_bodies.len() < MAX_ENV_META_SECTIONS;
                     m.env_meta_bodies
+                        .push(if retain { data.to_vec() } else { Vec::new() });
+                }
+                if name == SPEC_SECTION {
+                    let data = reader.data();
+                    let retain =
+                        data.len() <= MAX_SPEC_BYTES && m.spec_bodies.len() < MAX_SPEC_SECTIONS;
+                    m.spec_bodies
                         .push(if retain { data.to_vec() } else { Vec::new() });
                 }
                 m.custom_sections.push(name);
