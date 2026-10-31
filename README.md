@@ -12,6 +12,14 @@ Scan is a Rust library and CLI that inspects deployed Soroban contract bytecode 
 
 Part of **SoroSentinel**, security tooling for the Stellar ecosystem. It advises; it never controls the network and never touches private keys.
 
+## Watch it work
+
+[![A 23-second film: the word "execute" struck through, then a ScanReport assembling field by field, then the six codes it always reports](media/sorosentinel-scan.jpg)](media/sorosentinel-scan.mp4)
+
+No contract, module hash or endpoint appears in it — the `wasm_sha256` field is named, never filled, and the three indicators on screen are capability names with their plain-language glosses, not findings about anything deployed. The caps are this repo's own (`crates/scan-core/src/limits.rs`), set after sampling 61 distinct contract modules across 6000 testnet ledgers; over cap a section is not retained at all rather than truncated. Two of the seven indicators read a module's own claims rather than measuring it, and every SARIF result is `level: none`, because no Scan output is a determination.
+
+Music: ["Business Moves Vol. 12"](https://www.ende.app) by Sascha Ende, used under CC BY 4.0.
+
 ## Maintainers | [Telegram](TODO-telegram-group-link)
 
 | Maintainer | GitHub | Contact |
