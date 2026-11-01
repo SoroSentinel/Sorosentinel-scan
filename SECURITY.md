@@ -12,7 +12,7 @@ Report it privately through GitHub's private vulnerability reporting:
 
 **https://github.com/SoroSentinel/Sorosentinel-scan/security/advisories/new**
 
-(or the repository's **Security** tab → **Report a vulnerability**). If you cannot use GitHub, email TODO-security-contact.
+(or the repository's **Security** tab → **Report a vulnerability**). If you cannot use GitHub, email adebisiallison2018@gmail.com.
 
 Include:
 
