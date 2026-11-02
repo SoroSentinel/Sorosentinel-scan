@@ -1,10 +1,12 @@
 # Attaches prebuilt scan-cli binaries and SHA256SUMS to a GitHub release (#30).
 #
-# Runs when a release is published, or by hand for an existing tag. Uses only
-# the checkout action ci.yml already pins, rustup (which reads
-# rust-toolchain.toml) and the gh CLI on the runner, so it adds no dependency.
-# Signing, provenance attestations and the sandbox image push are not here yet:
-# they need new actions or a registry, which is a separate decision.
+# Runs when a release is published, or by hand for an existing tag. Uses the
+# checkout action ci.yml already pins, rustup (which reads rust-toolchain.toml),
+# the gh CLI on the runner, and actions/attest-build-provenance (approved
+# 2026-11-02) to sign a SLSA build provenance attestation over every archive.
+# Verify a download with:
+#   gh attestation verify <archive> --repo SoroSentinel/Sorosentinel-scan
+# The sandbox image push is not here yet: it needs a registry decision.
 name: release
 
 on:
@@ -61,6 +63,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # upload release assets
+      id-token: write # sign the provenance attestation (Sigstore)
+      attestations: write # store the attestation on GitHub
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
       GH_TOKEN: ${{ github.token }}
@@ -72,4 +76,18 @@ jobs:
           gh release download "$TAG" --pattern 'sorosentinel-scan_*.tar.gz' --repo "$GITHUB_REPOSITORY"
           sha256sum ./*.tar.gz | sed 's# \./# #' > SHA256SUMS
           cat SHA256SUMS
-          gh release upload "$TAG" SHA256SUMS --clobber --repo "$GITHUB_REPOSITORY"
+      # The attestation is built on GitHub's runner from the archives the build
+      # jobs uploaded; their digests come from SHA256SUMS above.
+      - name: Attest build provenance
+        id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: dist/SHA256SUMS
+      - name: Upload checksums and the attestation bundle
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          set -eu
+          cp "$BUNDLE" "dist/sorosentinel-scan_${TAG}.sigstore.json"
+          gh release upload "$TAG" dist/SHA256SUMS "dist/sorosentinel-scan_${TAG}.sigstore.json" \
+            --clobber --repo "$GITHUB_REPOSITORY"
